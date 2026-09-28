@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Personal CRM â€” Voice Entry</title>
+  <title>Personal CRM — Voice Entry</title>
   <style>
     :root {
       color-scheme: light;
@@ -124,11 +124,11 @@
 <body>
   <div class="app">
     <h1>Personal CRM</h1>
-    <p class="subtitle">Speak a name and any details â€” title, organization, email, date, comments, next steps.</p>
+    <p class="subtitle">Speak a name and any details — title, organization, email, date, comments, next steps.</p>
 
     <div class="card" id="recordCard">
       <div class="record-row">
-        <button id="recordBtn">ðŸŽ™ï¸ Start Recording</button>
+        <button id="recordBtn">🎙️ Start Recording</button>
         <div class="status" id="recordStatus"></div>
         <div class="transcript hidden" id="transcriptBox"></div>
       </div>
@@ -138,7 +138,7 @@
     </div>
 
     <div class="card hidden" id="formCard">
-      <div id="parsingMsg" class="status hidden"><span class="spinner"></span>Parsing with Geminiâ€¦</div>
+      <div id="parsingMsg" class="status hidden"><span class="spinner"></span>Parsing with Gemini…</div>
 
       <div id="formFields" class="hidden">
         <div class="row2">
@@ -161,7 +161,7 @@
         <label>Email <span class="opt">(optional)</span></label>
         <input id="f_email" type="email">
 
-        <label>Interaction date <span class="opt">(optional â€” defaults to today)</span></label>
+        <label>Interaction date <span class="opt">(optional — defaults to today)</span></label>
         <input id="f_interactionDate" type="date">
 
         <label>Comments <span class="opt">(optional)</span></label>
@@ -179,7 +179,7 @@
       <div id="errorMsg" class="error hidden"></div>
     </div>
 
-    <div id="successMsg" class="success hidden">âœ“ Saved to your sheet.</div>
+    <div id="successMsg" class="success hidden">✓ Saved to your sheet.</div>
   </div>
 
   <script>
@@ -267,9 +267,9 @@
       transcriptBox.textContent = '';
       transcriptBox.classList.add('hidden');
       isRecording = true;
-      recordBtn.textContent = 'â¹ï¸ Stop Recording';
+      recordBtn.textContent = '⏹️ Stop Recording';
       recordBtn.classList.add('recording');
-      recordStatus.textContent = 'Listeningâ€¦';
+      recordStatus.textContent = 'Listening…';
       try {
         recognition.start();
       } catch (e) {
@@ -285,11 +285,11 @@
 
       const transcript = finalTranscript.trim();
       if (!transcript) {
-        recordStatus.textContent = 'No speech captured â€” try again.';
+        recordStatus.textContent = 'No speech captured — try again.';
         return;
       }
 
-      recordStatus.textContent = 'Captured. Parsingâ€¦';
+      recordStatus.textContent = 'Captured. Parsing…';
       formCard.classList.remove('hidden');
       parsingMsg.classList.remove('hidden');
       formFields.classList.add('hidden');
@@ -301,7 +301,7 @@
     }
 
     function stopRecordingUI() {
-      recordBtn.textContent = 'ðŸŽ™ï¸ Start Recording';
+      recordBtn.textContent = '🎙️ Start Recording';
       recordBtn.classList.remove('recording');
     }
 
@@ -348,7 +348,7 @@
 
       errorMsg.classList.add('hidden');
       document.getElementById('saveBtn').disabled = true;
-      document.getElementById('saveBtn').textContent = 'Savingâ€¦';
+      document.getElementById('saveBtn').textContent = 'Saving…';
 
       callBackend('save', { fields: fields })
         .then(onSaved)
