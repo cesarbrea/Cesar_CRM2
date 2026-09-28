@@ -216,6 +216,7 @@
     let recognition = null;
     let isRecording = false;
     let finalTranscript = '';
+    let lastInterim = '';
 
     if (!SpeechRecognitionImpl) {
       recordBtn.disabled = true;
@@ -236,6 +237,7 @@
             interim += chunk;
           }
         }
+        lastInterim = interim;
         transcriptBox.classList.remove('hidden');
         transcriptBox.textContent = (finalTranscript + interim).trim();
       };
@@ -249,7 +251,9 @@
         if (isRecording) {
           // Auto-restart if it stopped on its own but user hasn't clicked stop.
           try { recognition.start(); } catch (e) { /* already stopped */ }
+          return;
         }
+        finishRecording();
       };
     }
 
@@ -264,6 +268,7 @@
     function startRecording() {
       resetForm();
       finalTranscript = '';
+      lastInterim = '';
       transcriptBox.textContent = '';
       transcriptBox.classList.add('hidden');
       isRecording = true;
@@ -279,11 +284,14 @@
     }
 
     function stopRecordingAndParse() {
-      isRecording = false; // set before .stop() so onend doesn't auto-restart
+      isRecording = false; // tells onend to finalize instead of auto-restarting
+      recordStatus.textContent = 'Finishing up…';
       recognition.stop();
       stopRecordingUI();
+    }
 
-      const transcript = finalTranscript.trim();
+    function finishRecording() {
+      const transcript = (finalTranscript + lastInterim).trim();
       if (!transcript) {
         recordStatus.textContent = 'No speech captured — try again.';
         return;
