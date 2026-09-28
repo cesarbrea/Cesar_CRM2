@@ -1,0 +1,383 @@
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Personal CRM — Voice Entry</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --accent: #2563eb;
+        --accent-dark: #1d4ed8;
+        --danger: #dc2626;
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --border: #e2e8f0;
+        --text: #0f172a;
+        --muted: #64748b;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 24px 16px 64px;
+        display: flex;
+        justify-content: center;
+      }
+      .app { width: 100%; max-width: 480px; }
+      h1 { font-size: 20px; margin: 0 0 4px; }
+      .subtitle { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+      }
+
+      .record-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      button {
+        font-family: inherit;
+        font-size: 15px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        padding: 12px 20px;
+      }
+      #recordBtn {
+        background: var(--accent);
+        color: white;
+        font-weight: 600;
+        width: 100%;
+        padding: 16px;
+        font-size: 16px;
+      }
+      #recordBtn.recording {
+        background: var(--danger);
+      }
+      #recordBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .status { font-size: 13px; color: var(--muted); min-height: 18px; text-align: center; }
+      .transcript {
+        font-size: 14px;
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        min-height: 40px;
+        white-space: pre-wrap;
+      }
+
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin: 14px 0 4px;
+      }
+      label .opt { font-weight: 400; color: var(--muted); }
+      input, textarea {
+        width: 100%;
+        font-family: inherit;
+        font-size: 14px;
+        padding: 9px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: white;
+        color: var(--text);
+      }
+      textarea { resize: vertical; min-height: 56px; }
+      .row2 { display: flex; gap: 10px; }
+      .row2 > div { flex: 1; }
+
+      .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+      .form-actions button { flex: 1; }
+      #saveBtn { background: var(--accent); color: white; font-weight: 600; }
+      #saveBtn:hover { background: var(--accent-dark); }
+      #cancelBtn { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+
+      .error { color: var(--danger); font-size: 13px; margin-top: 8px; white-space: pre-wrap; }
+      .success { color: #16a34a; font-size: 14px; font-weight: 600; text-align: center; padding: 8px 0; }
+      .hidden { display: none; }
+      .spinner {
+        border: 2px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        animation: spin 0.7s linear infinite;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 6px;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <h1>Personal CRM</h1>
+      <p class="subtitle">Speak a name and any details — title, organization, email, date, comments, next
+  steps.</p>
+
+      <div class="card" id="recordCard">
+        <div class="record-row">
+          <button id="recordBtn">🎙️ Start Recording</button>
+          <div class="status" id="recordStatus"></div>
+          <div class="transcript hidden" id="transcriptBox"></div>
+        </div>
+        <div id="unsupportedMsg" class="error hidden">
+          Speech recognition isn't supported in this browser. Please use desktop or Android Chrome.
+        </div>
+      </div>
+
+      <div class="card hidden" id="formCard">
+        <div id="parsingMsg" class="status hidden"><span class="spinner"></span>Parsing with Gemini…</div>
+
+        <div id="formFields" class="hidden">
+          <div class="row2">
+            <div>
+              <label>First name <span class="opt">(required)</span></label>
+              <input id="f_firstName" type="text">
+            </div>
+            <div>
+              <label>Last name <span class="opt">(required)</span></label>
+              <input id="f_lastName" type="text">
+            </div>
+          </div>
+
+          <label>Title <span class="opt">(optional)</span></label>
+          <input id="f_title" type="text">
+
+          <label>Organization <span class="opt">(optional)</span></label>
+          <input id="f_organization" type="text">
+
+          <label>Email <span class="opt">(optional)</span></label>
+          <input id="f_email" type="email">
+
+          <label>Interaction date <span class="opt">(optional — defaults to today)</span></label>
+          <input id="f_interactionDate" type="date">
+
+          <label>Comments <span class="opt">(optional)</span></label>
+          <textarea id="f_comments"></textarea>
+
+          <label>Next steps <span class="opt">(optional)</span></label>
+          <textarea id="f_nextSteps"></textarea>
+
+          <div class="form-actions">
+            <button id="cancelBtn">Discard</button>
+            <button id="saveBtn">Save to Sheet</button>
+          </div>
+        </div>
+
+        <div id="errorMsg" class="error hidden"></div>
+      </div>
+
+      <div id="successMsg" class="success hidden">✓ Saved to your sheet.</div>
+    </div>
+
+    <script>
+      const APPS_SCRIPT_URL = 'https://script.google.com/a/macros/cesarbrea.com/s/AKfycbzQJnrASSCn-DlFXTp7YzdKnpSS
+  k8Ki45eVFygSsnrN24Xep0-JpTJInV0sAjdLsVGbhQ/exec';
+
+      async function callBackend(action, payload) {
+        const response = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(Object.assign({ action: action }, payload))
+        });
+        const result = await response.json();
+        if (!result.ok) {
+          throw new Error(result.error || 'Unknown backend error');
+        }
+        return result.data;
+      }
+
+      const recordBtn = document.getElementById('recordBtn');
+      const recordStatus = document.getElementById('recordStatus');
+      const transcriptBox = document.getElementById('transcriptBox');
+      const unsupportedMsg = document.getElementById('unsupportedMsg');
+
+      const formCard = document.getElementById('formCard');
+      const parsingMsg = document.getElementById('parsingMsg');
+      const formFields = document.getElementById('formFields');
+      const errorMsg = document.getElementById('errorMsg');
+      const successMsg = document.getElementById('successMsg');
+
+      const SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let recognition = null;
+      let isRecording = false;
+      let finalTranscript = '';
+
+      if (!SpeechRecognitionImpl) {
+        recordBtn.disabled = true;
+        unsupportedMsg.classList.remove('hidden');
+      } else {
+        recognition = new SpeechRecognitionImpl();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = function(event) {
+          let interim = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const chunk = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += chunk + ' ';
+            } else {
+              interim += chunk;
+            }
+          }
+          transcriptBox.classList.remove('hidden');
+          transcriptBox.textContent = (finalTranscript + interim).trim();
+        };
+
+        recognition.onerror = function(event) {
+          recordStatus.textContent = 'Mic error: ' + event.error;
+          stopRecordingUI();
+        };
+
+        recognition.onend = function() {
+          if (isRecording) {
+            // Recognition can auto-stop on silence; if user hasn't pressed stop, restart it.
+            try { recognition.start(); } catch (e) { /* already stopped */ }
+          }
+        };
+      }
+
+      recordBtn.addEventListener('click', function() {
+        if (!isRecording) {
+          startRecording();
+        } else {
+          stopRecordingAndParse();
+        }
+      });
+
+      function startRecording() {
+        resetForm();
+        finalTranscript = '';
+        transcriptBox.textContent = '';
+        transcriptBox.classList.add('hidden');
+        isRecording = true;
+        recordBtn.textContent = '⏹️ Stop Recording';
+        recordBtn.classList.add('recording');
+        recordStatus.textContent = 'Listening…';
+        try {
+          recognition.start();
+        } catch (e) {
+          recordStatus.textContent = 'Could not start microphone: ' + e.message;
+          stopRecordingUI();
+        }
+      }
+
+      function stopRecordingAndParse() {
+        isRecording = false; // set before .stop() so onend doesn't auto-restart
+        recognition.stop();
+        stopRecordingUI();
+
+        const transcript = finalTranscript.trim();
+        if (!transcript) {
+          recordStatus.textContent = 'No speech captured — try again.';
+          return;
+        }
+
+        recordStatus.textContent = 'Captured. Parsing…';
+        formCard.classList.remove('hidden');
+        parsingMsg.classList.remove('hidden');
+        formFields.classList.add('hidden');
+        errorMsg.classList.add('hidden');
+
+        callBackend('parse', { transcript: transcript })
+          .then(onParsed)
+          .catch(onParseError);
+      }
+
+      function stopRecordingUI() {
+        recordBtn.textContent = '🎙️ Start Recording';
+        recordBtn.classList.remove('recording');
+      }
+
+      function onParsed(fields) {
+        parsingMsg.classList.add('hidden');
+        formFields.classList.remove('hidden');
+
+        document.getElementById('f_firstName').value = fields.firstName || '';
+        document.getElementById('f_lastName').value = fields.lastName || '';
+        document.getElementById('f_title').value = fields.title || '';
+        document.getElementById('f_organization').value = fields.organization || '';
+        document.getElementById('f_email').value = fields.email || '';
+        document.getElementById('f_interactionDate').value = fields.interactionDate || '';
+        document.getElementById('f_comments').value = fields.comments || '';
+        document.getElementById('f_nextSteps').value = fields.nextSteps || '';
+
+        recordStatus.textContent = 'Review the fields below, then save.';
+      }
+
+      function onParseError(error) {
+        parsingMsg.classList.add('hidden');
+        errorMsg.classList.remove('hidden');
+        errorMsg.textContent = 'Parsing failed: ' + (error.message || error);
+        recordStatus.textContent = '';
+      }
+
+      document.getElementById('saveBtn').addEventListener('click', function() {
+        const fields = {
+          firstName: document.getElementById('f_firstName').value.trim(),
+          lastName: document.getElementById('f_lastName').value.trim(),
+          title: document.getElementById('f_title').value.trim(),
+          organization: document.getElementById('f_organization').value.trim(),
+          email: document.getElementById('f_email').value.trim(),
+          interactionDate: document.getElementById('f_interactionDate').value,
+          comments: document.getElementById('f_comments').value.trim(),
+          nextSteps: document.getElementById('f_nextSteps').value.trim()
+        };
+
+        if (!fields.firstName || !fields.lastName) {
+          errorMsg.classList.remove('hidden');
+          errorMsg.textContent = 'First name and last name are required.';
+          return;
+        }
+
+        errorMsg.classList.add('hidden');
+        document.getElementById('saveBtn').disabled = true;
+        document.getElementById('saveBtn').textContent = 'Saving…';
+
+        callBackend('save', { fields: fields })
+          .then(onSaved)
+          .catch(onSaveError);
+      });
+
+      document.getElementById('cancelBtn').addEventListener('click', resetForm);
+
+      function onSaved() {
+        resetForm();
+        successMsg.classList.remove('hidden');
+        recordStatus.textContent = '';
+        setTimeout(function() { successMsg.classList.add('hidden'); }, 4000);
+      }
+
+      function onSaveError(error) {
+        document.getElementById('saveBtn').disabled = false;
+        document.getElementById('saveBtn').textContent = 'Save to Sheet';
+        errorMsg.classList.remove('hidden');
+        errorMsg.textContent = 'Save failed: ' + (error.message || error);
+      }
+
+      function resetForm() {
+        formCard.classList.add('hidden');
+        formFields.classList.add('hidden');
+        parsingMsg.classList.add('hidden');
+        errorMsg.classList.add('hidden');
+        document.getElementById('saveBtn').disabled = false;
+        document.getElementById('saveBtn').textContent = 'Save to Sheet';
+      }
+    </script>
+  </body>
+  </html>
