@@ -241,9 +241,19 @@
         lastInterim = interim;
         transcriptBox.classList.remove('hidden');
         transcriptBox.textContent = (finalTranscript + interim).trim();
+        console.log(
+          '[voice-crm] onresult final="' + finalTranscript +
+          '" interim="' + interim + '"'
+        );
       };
 
       recognition.onerror = function(event) {
+        console.log(
+          '[voice-crm] onerror error=' + event.error +
+          ' isRecording=' + isRecording +
+          ' final="' + finalTranscript + '"' +
+          ' lastInterim="' + lastInterim + '"'
+        );
         if (event.error === 'aborted' && !isRecording) {
           // Expected side effect of calling stop(); finalize below instead
           // of treating it as a real error.
@@ -256,6 +266,11 @@
       };
 
       recognition.onend = function() {
+        console.log(
+          '[voice-crm] onend isRecording=' + isRecording +
+          ' final="' + finalTranscript + '"' +
+          ' lastInterim="' + lastInterim + '"'
+        );
         if (isRecording) {
           // Auto-restart if it stopped on its own but user hasn't clicked stop.
           try { recognition.start(); } catch (e) { /* already stopped */ }
@@ -293,6 +308,10 @@
     }
 
     function stopRecordingAndParse() {
+      console.log(
+        '[voice-crm] stop clicked final="' + finalTranscript + '"' +
+        ' lastInterim="' + lastInterim + '"'
+      );
       isRecording = false; // tells onend to finalize instead of auto-restarting
       recordStatus.textContent = 'Finishing up…';
       recognition.stop();
@@ -300,6 +319,11 @@
     }
 
     function finishRecording() {
+      console.log(
+        '[voice-crm] finishRecording hasFinished=' + hasFinished +
+        ' final="' + finalTranscript + '"' +
+        ' lastInterim="' + lastInterim + '"'
+      );
       if (hasFinished) {
         return;
       }
