@@ -217,6 +217,7 @@
     let isRecording = false;
     let finalTranscript = '';
     let lastInterim = '';
+    let hasFinished = false;
 
     if (!SpeechRecognitionImpl) {
       recordBtn.disabled = true;
@@ -243,7 +244,14 @@
       };
 
       recognition.onerror = function(event) {
+        if (event.error === 'aborted' && !isRecording) {
+          // Expected side effect of calling stop(); finalize below instead
+          // of treating it as a real error.
+          finishRecording();
+          return;
+        }
         recordStatus.textContent = 'Mic error: ' + event.error;
+        isRecording = false;
         stopRecordingUI();
       };
 
@@ -269,6 +277,7 @@
       resetForm();
       finalTranscript = '';
       lastInterim = '';
+      hasFinished = false;
       transcriptBox.textContent = '';
       transcriptBox.classList.add('hidden');
       isRecording = true;
@@ -291,6 +300,11 @@
     }
 
     function finishRecording() {
+      if (hasFinished) {
+        return;
+      }
+      hasFinished = true;
+
       const transcript = (finalTranscript + lastInterim).trim();
       if (!transcript) {
         recordStatus.textContent = 'No speech captured — try again.';
